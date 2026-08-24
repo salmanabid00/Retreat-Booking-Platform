@@ -13,6 +13,7 @@ const transporter = nodemailer.createTransport({
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
+  family: 4, // Force IPv4 — fixes SMTP connection failures on cloud hosts that default to IPv6
 });
 
 /**
