@@ -18,6 +18,7 @@ dns.setDefaultResultOrder('ipv4first');
 connectDB();
 
 const app = express();
+app.set('trust proxy', 1);
 const server = http.createServer(app);
 
 // Initialize Socket.IO with Server
