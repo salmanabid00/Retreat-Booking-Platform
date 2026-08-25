@@ -1,22 +1,31 @@
 /**
- * Email service using Nodemailer.
+ * Email service using Resend HTTP API.
  *
- * Credentials and transport config come entirely from environment variables.
- * To switch providers (SendGrid, AWS SES, etc.), only change ENV vars and
- * the transporter config below — all calling code elsewhere stays the same.
+ * Uses Resend over HTTPS to bypass outbound SMTP port blocks (ports 465/587)
+ * on cloud hosting platforms such as Railway.
  */
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-  family: 4,
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+/**
+ * Generic email sender using Resend HTTP API.
+ * @param {Object} options - { to, subject, html }
+ */
+const sendEmail = async ({ to, subject, html }) => {
+  const { data, error } = await resend.emails.send({
+    from: 'Haven Hideaway <onboarding@resend.dev>',
+    to: Array.isArray(to) ? to : [to],
+    subject,
+    html,
+  });
+
+  if (error) {
+    throw new Error(error.message || 'Failed to send email via Resend');
+  }
+
+  return data;
+};
 
 /**
  * Send an account-verification email.
@@ -24,8 +33,7 @@ const transporter = nodemailer.createTransport({
  * @param {string} verificationLink - Full verification URL
  */
 async function sendVerificationEmail(toEmail, verificationLink) {
-  await transporter.sendMail({
-    from: `"Haven Hideaway" <${process.env.EMAIL_USER}>`,
+  return await sendEmail({
     to: toEmail,
     subject: 'Verify your Haven Hideaway account',
     html: `
@@ -65,4 +73,7 @@ async function sendVerificationEmail(toEmail, verificationLink) {
   });
 }
 
-module.exports = { sendVerificationEmail };
+module.exports = {
+  sendEmail,
+  sendVerificationEmail,
+};
