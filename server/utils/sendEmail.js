@@ -1,30 +1,43 @@
 /**
- * Email service using Resend HTTP API.
+ * Email service using Brevo (Sendinblue) HTTP API.
  *
- * Uses Resend over HTTPS to bypass outbound SMTP port blocks (ports 465/587)
- * on cloud hosting platforms such as Railway.
+ * Uses Brevo's transactional email endpoint over HTTPS to send emails
+ * reliably across all cloud hosting providers (e.g. Railway) without SMTP restrictions.
  */
-const { Resend } = require('resend');
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+const axios = require('axios');
 
 /**
- * Generic email sender using Resend HTTP API.
+ * Generic email sender using Brevo HTTP API.
  * @param {Object} options - { to, subject, html }
  */
 const sendEmail = async ({ to, subject, html }) => {
-  const { data, error } = await resend.emails.send({
-    from: 'Haven Hideaway <onboarding@resend.dev>',
-    to: Array.isArray(to) ? to : [to],
-    subject,
-    html,
-  });
-
-  if (error) {
-    throw new Error(error.message || 'Failed to send email via Resend');
+  try {
+    const response = await axios.post(
+      'https://api.brevo.com/v3/smtp/email',
+      {
+        sender: {
+          name: 'Haven Hideaway',
+          email: process.env.BREVO_SENDER_EMAIL || process.env.EMAIL_USER,
+        },
+        to: [{ email: to }],
+        subject,
+        htmlContent: html,
+      },
+      {
+        headers: {
+          'api-key': process.env.BREVO_API_KEY,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    const errorMsg =
+      error.response?.data?.message || error.message || 'Failed to send email via Brevo';
+    console.error('[Brevo Email Error]:', errorMsg);
+    throw new Error(errorMsg);
   }
-
-  return data;
 };
 
 /**
