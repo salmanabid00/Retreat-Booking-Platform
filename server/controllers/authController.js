@@ -17,6 +17,20 @@ function generateVerificationToken() {
   return { token, expire };
 }
 
+/**
+ * Construct the frontend verification link matching the route registered in App.jsx: /verify-email/:token
+ */
+function getClientVerificationUrl(token) {
+  const rawUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+  try {
+    const parsed = new URL(rawUrl);
+    return `${parsed.protocol}//${parsed.host}/verify-email/${token}`;
+  } catch {
+    const cleanUrl = rawUrl.replace(/\/+$/, '').replace(/\/properties$/, '');
+    return `${cleanUrl}/verify-email/${token}`;
+  }
+}
+
 // ─── Register ────────────────────────────────────────────────────────────────
 
 // @desc    Register a new user (Customer or Owner) — sends verification email
@@ -83,7 +97,7 @@ const registerUser = async (req, res, next) => {
     });
 
     // 5. Send verification email
-    const verificationLink = `${process.env.CLIENT_URL}/verify-email/${verificationToken}`;
+    const verificationLink = getClientVerificationUrl(verificationToken);
     let emailSent = true;
 
     try {
@@ -223,7 +237,7 @@ const resendVerificationEmail = async (req, res, next) => {
     user.verificationTokenExpire = newExpire;
     await user.save();
 
-    const verificationLink = `${process.env.CLIENT_URL}/verify-email/${newToken}`;
+    const verificationLink = getClientVerificationUrl(newToken);
     await sendVerificationEmail(user.email, verificationLink);
 
     return res.json({
