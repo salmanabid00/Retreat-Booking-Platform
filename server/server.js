@@ -11,6 +11,9 @@ const { initSocket } = require('./socket/socketHandler');
 // Load environment variables
 dotenv.config();
 
+const dns = require('dns');
+dns.setDefaultResultOrder('ipv4first');
+
 // Connect to MongoDB
 connectDB();
 
