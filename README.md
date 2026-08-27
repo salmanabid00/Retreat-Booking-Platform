@@ -18,11 +18,11 @@ HavenHideaway is a full-stack MERN platform engineered for booking and managing 
 | **Frontend** | React 19.1.0, Vite 6.3.5, React Router 7.18.2 | Component-based SPA architecture with client-side routing |
 | **Styling** | Tailwind CSS 4.3.3 & Custom Glassmorphism CSS | Glassmorphism design tokens, micro-animations, responsive layout |
 | **Icons & UI** | Lucide React 1.31.0, React Hot Toast 2.6.0 | Modern icon set and unified glassmorphic toast notification system |
-| **Backend** | Node.js, Express 5.2.1 | RESTful API server with custom error handling and rate limiting |
+| **Backend** | Node.js, Express 5.2.1 | RESTful API server with custom error handling and rate limiting (`trust proxy` enabled) |
 | **Database** | MongoDB, Mongoose 9.9.2 | Document database with schema validation, indexing, and population |
 | **Real-Time** | Socket.IO 4.8.3 (Client & Server) | Bidirectional messaging, typing indicators, read receipts, live notifications |
 | **Authentication**| JWT 9.0.3, Bcrypt.js 3.0.3, Crypto | Stateless Bearer token auth, password hashing, secure random tokens |
-| **Email Service**| Nodemailer 9.0.5 (SMTP / Gmail) | HTML verification emails and rate-limited link dispatch |
+| **Email Service**| Brevo (Sendinblue) HTTP API / Axios | HTTPS transactional email delivery for verification links without SMTP port/IPv6 limits |
 | **Media Storage**| Cloudinary 2.10.0, Multer 2.2.0 | Multipart image uploads with buffer transformations and cloud hosting |
 
 ---
@@ -31,9 +31,10 @@ HavenHideaway is a full-stack MERN platform engineered for booking and managing 
 
 ### 1. Multi-Role Authentication & Security
 - **Roles**: Distinct role privileges for `customer` (Guest), `owner` (Host), and `admin` (System Administrator).
-- **Email Verification**: Production-grade verified signup flow via expiring crypto tokens (24-hour expiry) sent through Nodemailer.
-- **DNS & Format Validation**: Domain verification via DNS MX record lookup (`dns.promises.resolveMx`) and RFC format validation.
+- **Email Verification**: Production-grade verified signup flow via expiring crypto tokens (24-hour expiry) dispatched through Brevo's HTTPS transactional email API.
+- **DNS & Format Validation**: Domain verification via DNS MX record lookup (`dns.promises.resolveMx`) and RFC format validation, with `ipv4first` global DNS ordering.
 - **Password Strength**: Real-time 5-rule strength indicator (minimum length, lowercase, uppercase, number, symbol).
+- **Proxy & Rate Limit Hardening**: Express configured with `trust proxy: 1` to ensure accurate client IP detection and rate limiting behind cloud load balancers (e.g. Railway).
 - **Access Control**: Role-based route middleware (`protect`, `authorize`) restricting sensitive resources.
 
 ### 2. Property Management (Host & Admin)
@@ -124,9 +125,9 @@ Retreat Booking Platform/
 | `MONGO_URI` | **Yes** | MongoDB connection string | `mongodb+srv://<user>:<pass>@cluster.mongodb.net/retreat_db` |
 | `JWT_SECRET` | **Yes** | Cryptographic secret key for signing JWT tokens | `super_secure_jwt_secret_key_2026` |
 | `JWT_EXPIRES_IN` | Optional | JWT token validity duration (defaults to `7d`) | `7d` |
-| `CLIENT_URL` | **Yes** | Allowed frontend URL(s) for CORS & email links | `https://your-app.vercel.app,http://localhost:5173` |
-| `EMAIL_USER` | Optional | SMTP username / Gmail address for verification emails | `your-email@gmail.com` |
-| `EMAIL_PASS` | Optional | SMTP password or Gmail App Password | `xxxx xxxx xxxx xxxx` |
+| `CLIENT_URL` | **Yes** | Allowed frontend URL(s) for CORS & verification links | `https://your-app.vercel.app,http://localhost:5173` |
+| `BREVO_API_KEY` | **Yes** | Brevo (Sendinblue) API v3 Key for transactional emails | `xkeysib-xxxxxxxx...` |
+| `BREVO_SENDER_EMAIL` / `EMAIL_USER` | **Yes** | Verified sender email configured in Brevo | `your-verified-sender@example.com` |
 | `CLOUDINARY_CLOUD_NAME` | Optional | Cloudinary account cloud name for image uploads | `your_cloud_name` |
 | `CLOUDINARY_API_KEY` | Optional | Cloudinary API Key | `123456789012345` |
 | `CLOUDINARY_API_SECRET` | Optional | Cloudinary API Secret | `abcdefghijklmnopqrstuvwxyz` |
@@ -195,7 +196,7 @@ Demo credentials for reviewer testing are available on request — please contac
 ## API Reference Summary
 
 ### Authentication (`/api/auth`)
-- `POST /api/auth/register` — Create new user (initiates verification email)
+- `POST /api/auth/register` — Create new user (initiates verification email via Brevo)
 - `GET /api/auth/verify-email/:token` — Verify user email address
 - `POST /api/auth/resend-verification` — Rate-limited verification email resend
 - `POST /api/auth/login` — Authenticate credentials & receive JWT
