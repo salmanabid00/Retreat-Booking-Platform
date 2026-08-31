@@ -6,21 +6,31 @@ import { SocketProvider } from './context/SocketContext';
 import Navbar from './components/common/Navbar';
 import Footer from './components/common/Footer';
 import NotificationToast from './components/common/NotificationToast';
-
-
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ProfilePage from './pages/ProfilePage';
 import PropertyListPage from './pages/PropertyListPage';
 import PropertyDetailPage from './pages/PropertyDetailPage';
 import CreateEditPropertyPage from './pages/CreateEditPropertyPage';
-import OwnerDashboard from './pages/OwnerDashboard';
 import CustomerBookingsPage from './pages/CustomerBookingsPage';
 import ChatPage from './pages/ChatPage';
 import NotificationsPage from './pages/NotificationsPage';
-import AdminDashboard from './pages/AdminDashboard';
 import VerifyEmailPage from './pages/VerifyEmailPage';
 import LoadingSpinner from './components/common/LoadingSpinner';
+
+// Admin Enterprise Layout & Subpages
+import AdminLayout from './pages/admin/AdminLayout';
+import AdminOverviewPage from './pages/admin/AdminOverviewPage';
+import AdminUsersPage from './pages/admin/AdminUsersPage';
+import AdminPropertiesPage from './pages/admin/AdminPropertiesPage';
+import AdminBookingsPage from './pages/admin/AdminBookingsPage';
+import AdminReportsPage from './pages/admin/AdminReportsPage';
+
+// Owner Sanctuary Host Layout & Subpages
+import OwnerLayout from './pages/owner/OwnerLayout';
+import OwnerOverviewPage from './pages/owner/OwnerOverviewPage';
+import OwnerPropertiesPage from './pages/owner/OwnerPropertiesPage';
+import OwnerBookingsPage from './pages/owner/OwnerBookingsPage';
 
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -128,15 +138,21 @@ function AppContent() {
             }
           />
 
-          {/* Owner / Host Protected Routes */}
+          {/* Owner / Host Protected Nested Routes */}
           <Route
             path="/owner-dashboard"
             element={
               <ProtectedRoute allowedRoles={['owner', 'admin']}>
-                <OwnerDashboard />
+                <OwnerLayout />
               </ProtectedRoute>
             }
-          />
+          >
+            <Route index element={<OwnerOverviewPage />} />
+            <Route path="overview" element={<OwnerOverviewPage />} />
+            <Route path="properties" element={<OwnerPropertiesPage />} />
+            <Route path="bookings" element={<OwnerBookingsPage />} />
+          </Route>
+          
           <Route
             path="/create-property"
             element={
@@ -154,15 +170,26 @@ function AppContent() {
             }
           />
 
-          {/* Admin Protected Routes */}
+          {/* Admin Protected Nested Routes */}
           <Route
-            path="/admin-dashboard"
+            path="/admin"
             element={
               <ProtectedRoute allowedRoles={['admin']}>
-                <AdminDashboard />
+                <AdminLayout />
               </ProtectedRoute>
             }
-          />
+          >
+            <Route index element={<AdminOverviewPage />} />
+            <Route path="overview" element={<AdminOverviewPage />} />
+            <Route path="users" element={<AdminUsersPage />} />
+            <Route path="properties" element={<AdminPropertiesPage />} />
+            <Route path="bookings" element={<AdminBookingsPage />} />
+            <Route path="reports" element={<AdminReportsPage />} />
+          </Route>
+
+          {/* Backwards compatibility aliases */}
+          <Route path="/admin-dashboard" element={<Navigate to="/admin" replace />} />
+          <Route path="/admin-dashboard/*" element={<Navigate to="/admin" replace />} />
 
           <Route path="*" element={<Navigate to="/properties" replace />} />
         </Routes>

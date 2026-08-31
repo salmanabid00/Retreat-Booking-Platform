@@ -28,7 +28,12 @@ const Navbar = ({ unreadNotifications = 0 }) => {
     navigate('/login');
   };
 
-  const isActive = (path) => location.pathname === path;
+  const isActive = (path) => {
+    if (path === '/' || path === '/properties') {
+      return location.pathname === path || (path === '/properties' && location.pathname === '/');
+    }
+    return location.pathname === path || location.pathname.startsWith(path);
+  };
 
   return (
     <header className="sticky top-0 z-50 glass-panel border-b border-slate-800/80 backdrop-blur-xl">
@@ -55,7 +60,7 @@ const Navbar = ({ unreadNotifications = 0 }) => {
             <Link
               to="/properties"
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                isActive('/properties') || isActive('/')
+                location.pathname === '/properties' || location.pathname === '/'
                   ? 'bg-indigo-600/90 text-white shadow-md shadow-indigo-500/20'
                   : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
               }`}
@@ -99,9 +104,9 @@ const Navbar = ({ unreadNotifications = 0 }) => {
                 {/* Admin Dashboard */}
                 {isAdmin && (
                   <Link
-                    to="/admin-dashboard"
+                    to="/admin"
                     className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                      isActive('/admin-dashboard')
+                      isActive('/admin')
                         ? 'bg-purple-600/90 text-white shadow-md shadow-purple-500/20'
                         : 'text-purple-300 hover:text-white hover:bg-purple-900/40'
                     }`}
@@ -271,7 +276,7 @@ const Navbar = ({ unreadNotifications = 0 }) => {
               )}
               {isAdmin && (
                 <Link
-                  to="/admin-dashboard"
+                  to="/admin"
                   onClick={() => setMobileMenuOpen(false)}
                   className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-200 hover:bg-slate-800"
                 >
