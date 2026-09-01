@@ -12,8 +12,10 @@ const getAdminStats = async (req, res, next) => {
     const ownersCount = await User.countDocuments({ role: 'owner' });
 
     const totalProperties = await Property.countDocuments();
+    const approvedProperties = await Property.countDocuments({ isApproved: true });
     const totalBookings = await Booking.countDocuments();
     const confirmedBookings = await Booking.countDocuments({ status: 'confirmed' });
+    const pendingBookings = await Booking.countDocuments({ status: 'pending' });
 
     const revenueResult = await Booking.aggregate([
       { $match: { status: 'confirmed' } },
@@ -22,6 +24,19 @@ const getAdminStats = async (req, res, next) => {
 
     const totalRevenue = revenueResult[0] ? revenueResult[0].totalRevenue : 0;
 
+    // Fetch recent bookings for overview activity feed
+    const recentBookings = await Booking.find()
+      .populate('customer', 'name email avatar')
+      .populate('property', 'title pricePerNight location images')
+      .sort({ createdAt: -1 })
+      .limit(6);
+
+    // Fetch recent users
+    const recentUsers = await User.find()
+      .select('-password')
+      .sort({ createdAt: -1 })
+      .limit(5);
+
     res.json({
       success: true,
       data: {
@@ -29,9 +44,13 @@ const getAdminStats = async (req, res, next) => {
         customersCount,
         ownersCount,
         totalProperties,
+        approvedProperties,
         totalBookings,
         confirmedBookings,
+        pendingBookings,
         totalRevenue,
+        recentBookings,
+        recentUsers,
       },
     });
   } catch (error) {
@@ -49,6 +68,80 @@ const getUsers = async (req, res, next) => {
     res.json({
       success: true,
       data: users,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get all platform properties list (Admin)
+// @route   GET /api/admin/properties
+// @access  Private (Admin)
+const getAllPropertiesAdmin = async (req, res, next) => {
+  try {
+    const properties = await Property.find()
+      .populate('owner', 'name email avatar')
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      count: properties.length,
+      data: properties,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get all platform bookings list (Admin)
+// @route   GET /api/admin/bookings
+// @access  Private (Admin)
+const getAllBookingsAdmin = async (req, res, next) => {
+  try {
+    const bookings = await Booking.find()
+      .populate('customer', 'name email avatar')
+      .populate({
+        path: 'property',
+        select: 'title pricePerNight location images propertyType owner',
+        populate: {
+          path: 'owner',
+          select: 'name email avatar',
+        },
+      })
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      count: bookings.length,
+      data: bookings,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get reports & analytics breakdown
+// @route   GET /api/admin/reports
+// @access  Private (Admin)
+const getAdminReports = async (req, res, next) => {
+  try {
+    // Breakdown by property type
+    const propertyTypeBreakdown = await Property.aggregate([
+      { $group: { _id: '$propertyType', count: { $sum: 1 }, avgPrice: { $avg: '$pricePerNight' } } },
+      { $sort: { count: -1 } },
+    ]);
+
+    // Breakdown by booking status
+    const bookingStatusBreakdown = await Booking.aggregate([
+      { $group: { _id: '$status', count: { $sum: 1 }, totalRevenue: { $sum: '$totalPrice' } } },
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        propertyTypeBreakdown,
+        bookingStatusBreakdown,
+      },
     });
   } catch (error) {
     next(error);
@@ -108,6 +201,9 @@ const togglePropertyApproval = async (req, res, next) => {
 module.exports = {
   getAdminStats,
   getUsers,
+  getAllPropertiesAdmin,
+  getAllBookingsAdmin,
+  getAdminReports,
   toggleUserBlock,
   togglePropertyApproval,
 };

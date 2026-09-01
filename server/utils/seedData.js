@@ -6,6 +6,10 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const User = require('../models/User');
 const Property = require('../models/Property');
+const Booking = require('../models/Booking');
+const Notification = require('../models/Notification');
+const Conversation = require('../models/Conversation');
+const Message = require('../models/Message');
 
 const connectDB = async () => {
   try {
@@ -23,9 +27,13 @@ const seedDatabase = async () => {
   try {
     await connectDB();
 
-    console.log('Clearing User and Property collections...');
+    console.log('Clearing all collections (Users, Properties, Bookings, Notifications, Conversations, Messages)...');
     await User.deleteMany({});
     await Property.deleteMany({});
+    await Booking.deleteMany({});
+    await Notification.deleteMany({});
+    await Conversation.deleteMany({});
+    await Message.deleteMany({});
 
     console.log('Creating demo users (isVerified: true — no email verification needed)...');
 
@@ -37,6 +45,17 @@ const seedDatabase = async () => {
       avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250',
       phone: '+1 (555) 234-5678',
       bio: 'Yoga enthusiast and retreat traveler seeking tranquil escapes.',
+      isVerified: true,
+    });
+
+    const customer2 = await User.create({
+      name: 'Julian Hayes',
+      email: 'julian.hayes@example.com',
+      password: 'password123!A',
+      role: 'customer',
+      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=250',
+      phone: '+1 (555) 456-7890',
+      bio: 'Nature photographer and weekend wellness traveler.',
       isVerified: true,
     });
 
@@ -69,82 +88,80 @@ const seedDatabase = async () => {
       role: 'admin',
       avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=250',
       phone: '+1 (555) 000-1111',
-      bio: 'HavenHideaway Platform Administrator.',
+      bio: 'Platform safety and system governance administrator.',
       isVerified: true,
     });
 
     console.log('Seeding Retreat Properties...');
 
-    await Property.create([
+    const [prop1, prop2, prop3, prop4] = await Property.create([
       {
-        title: 'Redwood Sanctuary Cabin & Spa',
-        description: 'Immerse yourself in towering ancient redwoods with panoramic mountain views. Features a private cedar hot tub, outdoor sauna, and wood-burning stone fireplace.',
-        propertyType: 'Cabin',
+        title: 'Serenity Ocean Villa & Yoga Deck',
+        description: 'Perched on the cliffs of Big Sur with panoramic ocean vistas, private infinity meditation pool, and sunrise yoga pavilion. Features chef kitchen, sauna, and organic botanical garden.',
+        propertyType: 'Villa',
         location: { city: 'Big Sur', state: 'CA', country: 'USA' },
-        address: '84000 Highway 1, Big Sur, CA 93920',
+        address: '47200 Highway 1, Big Sur, CA 93920',
         latitude: 36.2704,
         longitude: -121.8081,
-        pricePerNight: 320,
-        maxGuests: 6,
-        bedrooms: 3,
-        bathrooms: 2,
-        amenities: ['WiFi', 'Hot Tub', 'Sauna', 'Fireplace', 'Mountain View', 'Kitchen', 'Free Parking'],
-        rules: ['No smoking indoors', 'Quiet hours after 10 PM', 'Pets allowed on request'],
+        pricePerNight: 750,
+        maxGuests: 8,
+        bedrooms: 4,
+        bathrooms: 4,
+        amenities: ['WiFi', 'Pool', 'Ocean View', 'Yoga Deck', 'Hot Tub', 'Sauna', 'Kitchen', 'Free Parking'],
+        rules: ['No loud music after 10 PM', 'No smoking anywhere on premises'],
         images: [
-          { url: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&q=80&w=1200', public_id: 'redwood_1' },
-          { url: 'https://images.unsplash.com/photo-1510798831971-661eb04b3739?auto=format&fit=crop&q=80&w=1200', public_id: 'redwood_2' },
-          { url: 'https://images.unsplash.com/photo-1449844908441-8829872d2607?auto=format&fit=crop&q=80&w=1200', public_id: 'redwood_3' }
+          { url: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&q=80&w=1200', public_id: 'villa_1' },
+          { url: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=1200', public_id: 'villa_2' }
         ],
         checkInTime: '15:00',
         checkOutTime: '11:00',
         owner: owner._id,
         isApproved: true,
-        rating: 4.9,
-        numReviews: 24,
+        rating: 4.95,
+        numReviews: 28,
       },
       {
-        title: 'Serenity Ocean Villa & Yoga Deck',
-        description: 'Exclusive beachfront sanctuary in Malibu with private beach access, infinity pool, floor-to-ceiling ocean views, and a dedicated sunset yoga deck.',
-        propertyType: 'Villa',
-        location: { city: 'Malibu', state: 'CA', country: 'USA' },
-        address: '22000 Pacific Coast Highway, Malibu, CA 90265',
-        latitude: 34.0259,
-        longitude: -118.7798,
-        pricePerNight: 750,
-        maxGuests: 10,
-        bedrooms: 5,
-        bathrooms: 4,
-        amenities: ['WiFi', 'Pool', 'Beachfront', 'Hot Tub', 'Yoga Deck', 'Chef Kitchen', 'Air Conditioning'],
-        rules: ['No large parties', 'No smoking', 'Respect ocean wildlife'],
-        images: [
-          { url: 'https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&q=80&w=1200', public_id: 'ocean_1' },
-          { url: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=1200', public_id: 'ocean_2' },
-          { url: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&q=80&w=1200', public_id: 'ocean_3' }
-        ],
-        checkInTime: '16:00',
-        checkOutTime: '10:00',
-        owner: owner._id,
-        isApproved: true,
-        rating: 5.0,
-        numReviews: 18,
-      },
-      {
-        title: 'Solstice Desert Eco Haven',
-        description: 'Architectural desert glamping sanctuary surrounded by Joshua trees and starry skies. Features a private stargazing deck, dip pool, and open-air rainfall shower.',
-        propertyType: 'Glamping',
-        location: { city: 'Joshua Tree', state: 'CA', country: 'USA' },
-        address: '6200 Sunfair Rd, Joshua Tree, CA 92252',
-        latitude: 34.1347,
-        longitude: -116.3131,
-        pricePerNight: 240,
+        title: 'Redwood Sanctuary Cabin & Spa',
+        description: 'Nestled deep among ancient coastal redwoods, this architect-designed timber cabin offers total tranquility, cedar hot tub, indoor stone fireplace, and forest trail access.',
+        propertyType: 'Cabin',
+        location: { city: 'Mendocino', state: 'CA', country: 'USA' },
+        address: '10500 Albion Ridge Rd, Mendocino, CA 95460',
+        latitude: 39.3077,
+        longitude: -123.7995,
+        pricePerNight: 320,
         maxGuests: 4,
         bedrooms: 2,
         bathrooms: 1,
-        amenities: ['WiFi', 'Dip Pool', 'Stargazing Deck', 'Fire Pit', 'Air Conditioning', 'Kitchenette'],
-        rules: ['No footwear indoors', 'Quiet desert hours after 9 PM'],
+        amenities: ['WiFi', 'Hot Tub', 'Fireplace', 'Forest View', 'Kitchen', 'EV Charger'],
+        rules: ['No pets inside without prior approval', 'Respect wildlife'],
+        images: [
+          { url: 'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&q=80&w=1200', public_id: 'cabin_1' },
+          { url: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&q=80&w=1200', public_id: 'cabin_2' }
+        ],
+        checkInTime: '16:00',
+        checkOutTime: '11:00',
+        owner: owner._id,
+        isApproved: true,
+        rating: 4.9,
+        numReviews: 19,
+      },
+      {
+        title: 'Solstice Desert Eco Haven',
+        description: 'Minimalist adobe sanctuary in the high desert with unobstructed stargazing, solar architecture, plunge pool, open-air firepit, and panoramic mountain backdrop.',
+        propertyType: 'Resort',
+        location: { city: 'Joshua Tree', state: 'CA', country: 'USA' },
+        address: '62500 Sunburst Ave, Joshua Tree, CA 92252',
+        latitude: 34.1347,
+        longitude: -116.3131,
+        pricePerNight: 480,
+        maxGuests: 6,
+        bedrooms: 3,
+        bathrooms: 2,
+        amenities: ['WiFi', 'Plunge Pool', 'Stargazing Deck', 'Firepit', 'Solar Powered', 'AC'],
+        rules: ['Desert conservation rules apply', 'No open flame during wind warnings'],
         images: [
           { url: 'https://images.unsplash.com/photo-1518780664697-55e3ad937233?auto=format&fit=crop&q=80&w=1200', public_id: 'desert_1' },
-          { url: 'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&q=80&w=1200', public_id: 'desert_2' }
+          { url: 'https://images.unsplash.com/photo-1507038772120-7ffe76f79d68?auto=format&fit=crop&q=80&w=1200', public_id: 'desert_2' }
         ],
         checkInTime: '15:00',
         checkOutTime: '11:00',
@@ -180,7 +197,110 @@ const seedDatabase = async () => {
       }
     ]);
 
-    console.log('Database Seeded Successfully! All demo users have isVerified: true.');
+    console.log('Seeding Platform Bookings across all properties...');
+
+    const today = new Date();
+    const addDays = (d, n) => {
+      const copy = new Date(d);
+      copy.setDate(copy.getDate() + n);
+      return copy;
+    };
+
+    await Booking.create([
+      // Property 1: Serenity Ocean Villa
+      {
+        customer: customer._id,
+        property: prop1._id,
+        checkInDate: addDays(today, 10),
+        checkOutDate: addDays(today, 14),
+        guests: 4,
+        nights: 4,
+        pricePerNight: prop1.pricePerNight,
+        totalPrice: prop1.pricePerNight * 4,
+        status: 'confirmed',
+        specialRequest: 'Vegetarian welcome basket requested for yoga group.'
+      },
+      {
+        customer: customer2._id,
+        property: prop1._id,
+        checkInDate: addDays(today, 20),
+        checkOutDate: addDays(today, 22),
+        guests: 2,
+        nights: 2,
+        pricePerNight: prop1.pricePerNight,
+        totalPrice: prop1.pricePerNight * 2,
+        status: 'pending',
+        specialRequest: 'Arriving late around 8 PM.'
+      },
+      {
+        customer: customer._id,
+        property: prop1._id,
+        checkInDate: addDays(today, -15),
+        checkOutDate: addDays(today, -12),
+        guests: 3,
+        nights: 3,
+        pricePerNight: prop1.pricePerNight,
+        totalPrice: prop1.pricePerNight * 3,
+        status: 'cancelled',
+        specialRequest: 'Cancelled due to flight change.'
+      },
+
+      // Property 2: Redwood Sanctuary Cabin
+      {
+        customer: customer._id,
+        property: prop2._id,
+        checkInDate: addDays(today, 5),
+        checkOutDate: addDays(today, 8),
+        guests: 2,
+        nights: 3,
+        pricePerNight: prop2.pricePerNight,
+        totalPrice: prop2.pricePerNight * 3,
+        status: 'confirmed',
+        specialRequest: 'Celebrating anniversary.'
+      },
+      {
+        customer: customer2._id,
+        property: prop2._id,
+        checkInDate: addDays(today, 16),
+        checkOutDate: addDays(today, 18),
+        guests: 1,
+        nights: 2,
+        pricePerNight: prop2.pricePerNight,
+        totalPrice: prop2.pricePerNight * 2,
+        status: 'pending',
+        specialRequest: 'Quiet solo writing retreat.'
+      },
+
+      // Property 3: Solstice Desert Eco Haven
+      {
+        customer: customer2._id,
+        property: prop3._id,
+        checkInDate: addDays(today, 12),
+        checkOutDate: addDays(today, 15),
+        guests: 4,
+        nights: 3,
+        pricePerNight: prop3.pricePerNight,
+        totalPrice: prop3.pricePerNight * 3,
+        status: 'confirmed',
+        specialRequest: 'Stargazing telescope orientation requested.'
+      },
+
+      // Property 4: Alpine Glass Treehouse Haven
+      {
+        customer: customer._id,
+        property: prop4._id,
+        checkInDate: addDays(today, 25),
+        checkOutDate: addDays(today, 28),
+        guests: 2,
+        nights: 3,
+        pricePerNight: prop4.pricePerNight,
+        totalPrice: prop4.pricePerNight * 3,
+        status: 'confirmed',
+        specialRequest: 'Early check-in if possible.'
+      }
+    ]);
+
+    console.log('Database Seeded Successfully! All demo users and sample bookings are initialized.');
     await mongoose.connection.close();
     process.exit(0);
   } catch (error) {
