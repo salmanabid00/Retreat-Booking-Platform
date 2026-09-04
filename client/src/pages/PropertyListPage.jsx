@@ -79,18 +79,18 @@ const PropertyListPage = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
       
       {/* Hero Header Banner */}
-      <div className="relative glass-panel rounded-3xl p-8 sm:p-12 overflow-hidden border border-slate-800 shadow-2xl">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl -z-10 pointer-events-none"></div>
-        <div className="absolute bottom-0 left-1/3 w-80 h-80 bg-purple-600/10 rounded-full blur-3xl -z-10 pointer-events-none"></div>
+      <div className="relative bg-stone-900/60 backdrop-blur-xl rounded-3xl p-8 sm:p-12 overflow-hidden border border-stone-800/80 shadow-2xl">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl -z-10 pointer-events-none"></div>
+        <div className="absolute bottom-0 left-1/3 w-80 h-80 bg-amber-600/5 rounded-full blur-3xl -z-10 pointer-events-none"></div>
 
         <div className="max-w-2xl space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold uppercase tracking-wider">
-            <Sparkles className="w-3.5 h-3.5" /> Curated Sanctuary Escapes
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold uppercase tracking-wider">
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Curated Sanctuary Escapes
           </div>
-          <h1 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight">
-            Find Your Sanctuary & <span className="gradient-text">Retreat Sanctuary</span>
+          <h1 className="text-3xl sm:text-5xl font-bold text-stone-100 tracking-tight leading-tight font-serif">
+            Find Your Restorative <span className="text-amber-400">Sanctuary</span>
           </h1>
-          <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
+          <p className="text-stone-300 text-xs sm:text-sm leading-relaxed">
             Discover peaceful mountain cabins, coastal wellness villas, and glamping eco-havens tailored for mindfulness, remote work, and deep relaxation.
           </p>
         </div>
@@ -109,10 +109,10 @@ const PropertyListPage = () => {
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="glass-panel h-96 rounded-3xl animate-pulse p-4 space-y-4">
-              <div className="h-48 bg-slate-800/80 rounded-2xl"></div>
-              <div className="h-6 bg-slate-800/80 rounded w-3/4"></div>
-              <div className="h-4 bg-slate-800/60 rounded w-1/2"></div>
+            <div key={i} className="bg-stone-900/60 border border-stone-800/80 h-96 rounded-3xl animate-pulse p-4 space-y-4">
+              <div className="h-48 bg-stone-800/80 rounded-2xl"></div>
+              <div className="h-5 bg-stone-800/80 rounded w-3/4"></div>
+              <div className="h-4 bg-stone-800/60 rounded w-1/2"></div>
             </div>
           ))}
         </div>
@@ -126,10 +126,10 @@ const PropertyListPage = () => {
         />
       ) : (
         <>
-          <div className="flex items-center justify-between text-xs text-slate-400 px-1">
+          <div className="flex items-center justify-between text-xs text-stone-400 px-1">
             <span>
-              Showing <strong className="text-white">{properties.length}</strong> of{' '}
-              <strong className="text-white">{pagination.totalCount}</strong> retreat sanctuaries
+              Showing <strong className="text-stone-200">{properties.length}</strong> of{' '}
+              <strong className="text-stone-200">{pagination.totalCount}</strong> retreat sanctuaries
             </span>
             <span>Page {pagination.page} of {pagination.totalPages}</span>
           </div>
@@ -147,7 +147,7 @@ const PropertyListPage = () => {
               <button
                 disabled={pagination.page <= 1}
                 onClick={() => handlePageChange(pagination.page - 1)}
-                className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition flex items-center gap-1 text-xs font-semibold"
+                className="p-2.5 rounded-xl bg-stone-900/80 border border-stone-800 text-stone-300 hover:text-stone-100 hover:border-stone-700 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition flex items-center gap-1 text-xs font-semibold"
               >
                 <ChevronLeft className="w-4 h-4" /> Previous
               </button>
@@ -159,8 +159,8 @@ const PropertyListPage = () => {
                     onClick={() => handlePageChange(pNum)}
                     className={`w-9 h-9 rounded-xl text-xs font-bold transition cursor-pointer ${
                       pagination.page === pNum
-                        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
-                        : 'bg-slate-900/80 border border-slate-800 text-slate-400 hover:text-white'
+                        ? 'bg-gradient-to-r from-amber-600 to-amber-500 text-stone-950 shadow-md shadow-amber-600/20'
+                        : 'bg-stone-900/80 border border-stone-800 text-stone-400 hover:text-stone-200 hover:border-stone-700'
                     }`}
                   >
                     {pNum}
@@ -171,7 +171,7 @@ const PropertyListPage = () => {
               <button
                 disabled={pagination.page >= pagination.totalPages}
                 onClick={() => handlePageChange(pagination.page + 1)}
-                className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition flex items-center gap-1 text-xs font-semibold"
+                className="p-2.5 rounded-xl bg-stone-900/80 border border-stone-800 text-stone-300 hover:text-stone-100 hover:border-stone-700 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition flex items-center gap-1 text-xs font-semibold"
               >
                 Next <ChevronRight className="w-4 h-4" />
               </button>

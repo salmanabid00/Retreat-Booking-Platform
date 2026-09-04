@@ -47,6 +47,17 @@ const bookingSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    paymentStatus: {
+      type: String,
+      enum: ['unpaid', 'paid', 'refunded'],
+      default: 'unpaid',
+    },
+    stripeCheckoutSessionId: {
+      type: String,
+    },
+    stripePaymentIntentId: {
+      type: String,
+    },
   },
   {
     timestamps: true,
@@ -56,5 +67,7 @@ const bookingSchema = new mongoose.Schema(
 // Indexes for fast lookup & date overlap checks
 bookingSchema.index({ property: 1, status: 1, checkInDate: 1, checkOutDate: 1 });
 bookingSchema.index({ customer: 1, createdAt: -1 });
+bookingSchema.index({ status: 1, createdAt: -1 });
+bookingSchema.index({ property: 1, createdAt: -1 });
 
 module.exports = mongoose.model('Booking', bookingSchema);

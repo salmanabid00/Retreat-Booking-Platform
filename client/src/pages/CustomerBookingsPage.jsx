@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import API from '../api/axios';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import ErrorBanner from '../components/common/ErrorBanner';
 import EmptyState from '../components/common/EmptyState';
 import ConfirmModal from '../components/common/ConfirmModal';
+import { Button } from '../components/ui/button';
+import { Badge } from '../components/ui/badge';
 import { 
   Calendar, 
   MapPin, 
@@ -16,7 +18,9 @@ import {
   CheckCircle2, 
   AlertCircle, 
   Compass,
-  Sparkles 
+  Sparkles,
+  CreditCard,
+  Check
 } from 'lucide-react';
 
 const StatusBadge = ({ status }) => {
@@ -30,7 +34,7 @@ const StatusBadge = ({ status }) => {
     case 'pending':
       return (
         <span className="px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold uppercase tracking-wider flex items-center gap-1 animate-pulse">
-          <Clock className="w-3.5 h-3.5" /> Pending Approval
+          <Clock className="w-3.5 h-3.5" /> Pending Host Approval
         </span>
       );
     case 'rejected':
@@ -56,34 +60,89 @@ const StatusBadge = ({ status }) => {
 
 const CustomerBookingsPage = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [cancelLoadingId, setCancelLoadingId] = useState(null);
+  const [payingBookingId, setPayingBookingId] = useState(null);
 
   // Confirm modal state
   const [bookingToCancel, setBookingToCancel] = useState(null);
+  const handledRedirectRef = useRef(false);
 
-  const fetchMyBookings = async () => {
+  const fetchMyBookings = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       setError('');
       const response = await API.get('/bookings/my-bookings');
       if (response.data.success) {
         setBookings(response.data.data);
+        return response.data.data;
       }
     } catch (err) {
       console.error('Fetch customer bookings error:', err);
-      setError(err.response?.data?.message || 'Failed to load your retreat bookings.');
-      toast.error(err.response?.data?.message || 'Failed to load your retreat bookings.');
+      if (!silent) {
+        setError(err.response?.data?.message || 'Failed to load your retreat bookings.');
+        toast.error(err.response?.data?.message || 'Failed to load your retreat bookings.');
+      }
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
+    return [];
   };
 
   useEffect(() => {
-    fetchMyBookings();
+    const initPage = async () => {
+      const data = await fetchMyBookings();
+
+      const paymentParam = searchParams.get('payment');
+      const targetBookingId = searchParams.get('bookingId');
+
+      if (paymentParam && !handledRedirectRef.current) {
+        handledRedirectRef.current = true;
+
+        if (paymentParam === 'success') {
+          toast.success('Payment received successfully! Confirming your reservation...');
+
+          // If webhook took a moment, re-poll once after 2.5 seconds
+          setTimeout(async () => {
+            const updated = await fetchMyBookings(true);
+            const target = updated.find((b) => b._id === targetBookingId);
+            if (target && target.paymentStatus === 'paid') {
+              toast.success('Your booking is officially marked as PAID!');
+            }
+          }, 2500);
+        } else if (paymentParam === 'cancelled') {
+          toast('Payment was cancelled. You can complete payment whenever you are ready.', {
+            icon: 'ℹ️',
+          });
+        }
+
+        // Clean query parameters from URL
+        setSearchParams({}, { replace: true });
+      }
+    };
+
+    initPage();
   }, []);
+
+  const handlePayNow = async (bookingId) => {
+    try {
+      setPayingBookingId(bookingId);
+      const response = await API.post(`/bookings/${bookingId}/create-checkout-session`);
+      if (response.data.success && response.data.url) {
+        window.location.href = response.data.url;
+      } else {
+        toast.error('Failed to create payment session. Please try again.');
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Failed to initiate checkout. Please try again.';
+      toast.error(msg);
+    } finally {
+      setPayingBookingId(null);
+    }
+  };
 
   const confirmCancelBooking = async () => {
     if (!bookingToCancel) return;
@@ -123,7 +182,7 @@ const CustomerBookingsPage = () => {
       {/* Header */}
       <div className="glass-panel p-8 rounded-3xl border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-2xl">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold">
             <Sparkles className="w-3.5 h-3.5" /> Guest Portal
           </div>
           <h1 className="text-3xl font-extrabold text-white tracking-tight">My Retreat Bookings</h1>
@@ -138,7 +197,7 @@ const CustomerBookingsPage = () => {
         </Link>
       </div>
 
-      <ErrorBanner message={error} onRetry={fetchMyBookings} />
+      <ErrorBanner message={error} onRetry={() => fetchMyBookings(false)} />
 
       {/* Bookings List */}
       {bookings.length === 0 ? (
@@ -157,6 +216,10 @@ const CustomerBookingsPage = () => {
               ? prop.images[0].url
               : 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&q=80&w=800';
 
+            const isConfirmed = booking.status === 'confirmed';
+            const isPaid = booking.paymentStatus === 'paid';
+            const isUnpaid = !booking.paymentStatus || booking.paymentStatus === 'unpaid';
+
             return (
               <div key={booking._id} className="glass-panel rounded-3xl p-6 border border-slate-800 shadow-xl flex flex-col md:flex-row gap-6">
                 
@@ -172,10 +235,22 @@ const CustomerBookingsPage = () => {
                 <div className="flex-1 space-y-3 flex flex-col justify-between">
                   <div>
                     <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
-                      <h3 className="text-xl font-bold text-white hover:text-indigo-400 transition">
+                      <h3 className="text-xl font-bold text-white hover:text-amber-400 transition">
                         <Link to={`/properties/${prop._id}`}>{prop.title || 'Retreat Property'}</Link>
                       </h3>
-                      <StatusBadge status={booking.status} />
+                      <div className="flex items-center gap-2">
+                        <StatusBadge status={booking.status} />
+                        {isPaid && (
+                          <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold uppercase tracking-wider flex items-center gap-1">
+                            <Check className="w-3.5 h-3.5" /> Paid
+                          </span>
+                        )}
+                        {isConfirmed && isUnpaid && (
+                          <span className="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30 text-[11px] font-semibold flex items-center gap-1">
+                            Awaiting Payment
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     <p className="text-xs text-slate-400 flex items-center gap-1">
@@ -200,12 +275,12 @@ const CustomerBookingsPage = () => {
                     </div>
                     <div>
                       <span className="text-[10px] text-slate-500 uppercase block">Total Cost</span>
-                      <span className="font-bold text-indigo-400 text-sm">${booking.totalPrice}</span>
+                      <span className="font-bold text-amber-400 text-sm">${booking.totalPrice}</span>
                     </div>
                   </div>
 
                   {/* Actions Bar */}
-                  <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between gap-3">
+                  <div className="pt-2 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3">
                     {prop.owner && (
                       <div className="flex items-center gap-2 text-xs text-slate-400">
                         <img
@@ -217,7 +292,26 @@ const CustomerBookingsPage = () => {
                       </div>
                     )}
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 ml-auto">
+                      {/* Stripe Pay Now Action: Visible only when confirmed and unpaid */}
+                      {isConfirmed && isUnpaid && (
+                        <Button
+                          type="button"
+                          variant="brand"
+                          size="sm"
+                          onClick={() => handlePayNow(booking._id)}
+                          disabled={payingBookingId === booking._id}
+                          className="bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-stone-950 font-bold shadow-md shadow-amber-600/20"
+                        >
+                          {payingBookingId === booking._id ? (
+                            <div className="w-3.5 h-3.5 border-2 border-stone-950/30 border-t-stone-950 rounded-full animate-spin" />
+                          ) : (
+                            <CreditCard className="w-3.5 h-3.5" />
+                          )}
+                          Pay Now (${booking.totalPrice})
+                        </Button>
+                      )}
+
                       <Link
                         to={`/chat?booking=${booking._id}`}
                         className="px-4 py-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-indigo-500 text-xs font-semibold text-slate-300 hover:text-white transition flex items-center gap-1.5"

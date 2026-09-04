@@ -8,6 +8,8 @@ const connectDB = require('./config/db');
 const { errorHandler } = require('./middleware/errorMiddleware');
 const { initSocket } = require('./socket/socketHandler');
 
+const compression = require('compression');
+
 // Load environment variables
 dotenv.config();
 
@@ -19,6 +21,10 @@ connectDB();
 
 const app = express();
 app.set('trust proxy', 1);
+
+// HTTP Response Compression
+app.use(compression());
+
 const server = http.createServer(app);
 
 // Initialize Socket.IO with Server
@@ -26,11 +32,6 @@ const io = initSocket(server);
 app.set('io', io);
 
 const PORT = process.env.PORT || 5000;
-
-// Body parser & Cookie parser middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(cookieParser());
 
 // CORS configuration
 const clientUrl = process.env.CLIENT_URL;
@@ -60,6 +61,15 @@ app.use(
     credentials: true,
   })
 );
+
+// Stripe Webhook (MUST be registered before express.json() to receive unparsed raw body for signature verification)
+const { handleStripeWebhook } = require('./controllers/webhookController');
+app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), handleStripeWebhook);
+
+// Body parser & Cookie parser middleware
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(cookieParser());
 
 // Prevent intermediate caching on all dynamic API endpoints
 app.use('/api', (req, res, next) => {

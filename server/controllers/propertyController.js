@@ -102,15 +102,18 @@ const getProperties = async (req, res, next) => {
 
     // Pagination calculations
     const pageNum = Math.max(1, parseInt(page, 10));
-    const limitNum = Math.max(1, parseInt(limit, 10));
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10)));
     const skip = (pageNum - 1) * limitNum;
 
-    const totalCount = await Property.countDocuments(query);
-    const properties = await Property.find(query)
-      .populate('owner', 'name email avatar rating')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limitNum);
+    const [totalCount, properties] = await Promise.all([
+      Property.countDocuments(query),
+      Property.find(query)
+        .populate('owner', 'name email avatar rating')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limitNum)
+        .lean(),
+    ]);
 
     res.json({
       success: true,
@@ -132,10 +135,9 @@ const getProperties = async (req, res, next) => {
 // @access  Public
 const getPropertyById = async (req, res, next) => {
   try {
-    const property = await Property.findById(req.params.id).populate(
-      'owner',
-      'name email avatar phone bio createdAt'
-    );
+    const property = await Property.findById(req.params.id)
+      .populate('owner', 'name email avatar phone bio createdAt')
+      .lean();
 
     if (!property) {
       return res.status(404).json({
@@ -409,7 +411,7 @@ const deleteProperty = async (req, res, next) => {
 // @access  Private (Owner)
 const getMyProperties = async (req, res, next) => {
   try {
-    const properties = await Property.find({ owner: req.user._id }).sort({ createdAt: -1 });
+    const properties = await Property.find({ owner: req.user._id }).sort({ createdAt: -1 }).lean();
 
     res.json({
       success: true,

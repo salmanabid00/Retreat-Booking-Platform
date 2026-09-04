@@ -126,8 +126,11 @@ const propertySchema = new mongoose.Schema(
 );
 
 // Indexes for fast search & filter queries
+propertySchema.index({ isApproved: 1, createdAt: -1 });
+propertySchema.index({ isApproved: 1, propertyType: 1, pricePerNight: 1 });
 propertySchema.index({ 'location.city': 1, propertyType: 1 });
 propertySchema.index({ pricePerNight: 1, maxGuests: 1 });
+propertySchema.index({ owner: 1, createdAt: -1 });
 propertySchema.index({ isApproved: 1, owner: 1 });
 
 module.exports = mongoose.model('Property', propertySchema);

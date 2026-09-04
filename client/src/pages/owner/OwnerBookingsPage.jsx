@@ -174,13 +174,24 @@ const OwnerBookingsPage = () => {
                     <span className="text-base font-bold text-white truncate max-w-[280px]">
                       {prop.title || 'Sanctuary Retreat'}
                     </span>
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                      booking.status === 'confirmed' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
-                      booking.status === 'pending' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse' :
-                      booking.status === 'rejected' ? 'bg-rose-500/20 text-rose-300' : 'bg-slate-800 text-slate-400'
-                    }`}>
-                      {booking.status}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                        booking.status === 'confirmed' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
+                        booking.status === 'pending' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse' :
+                        booking.status === 'rejected' ? 'bg-rose-500/20 text-rose-300' : 'bg-slate-800 text-slate-400'
+                      }`}>
+                        {booking.status}
+                      </span>
+                      {booking.paymentStatus === 'paid' ? (
+                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold uppercase tracking-wider">
+                          ✓ Paid
+                        </span>
+                      ) : booking.status === 'confirmed' ? (
+                        <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30 text-[10px] font-semibold">
+                          Awaiting Guest Payment
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-3 text-xs text-slate-300">

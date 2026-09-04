@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -6,31 +6,35 @@ import { SocketProvider } from './context/SocketContext';
 import Navbar from './components/common/Navbar';
 import Footer from './components/common/Footer';
 import NotificationToast from './components/common/NotificationToast';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import ProfilePage from './pages/ProfilePage';
-import PropertyListPage from './pages/PropertyListPage';
-import PropertyDetailPage from './pages/PropertyDetailPage';
-import CreateEditPropertyPage from './pages/CreateEditPropertyPage';
-import CustomerBookingsPage from './pages/CustomerBookingsPage';
-import ChatPage from './pages/ChatPage';
-import NotificationsPage from './pages/NotificationsPage';
-import VerifyEmailPage from './pages/VerifyEmailPage';
 import LoadingSpinner from './components/common/LoadingSpinner';
 
-// Admin Enterprise Layout & Subpages
-import AdminLayout from './pages/admin/AdminLayout';
-import AdminOverviewPage from './pages/admin/AdminOverviewPage';
-import AdminUsersPage from './pages/admin/AdminUsersPage';
-import AdminPropertiesPage from './pages/admin/AdminPropertiesPage';
-import AdminBookingsPage from './pages/admin/AdminBookingsPage';
-import AdminReportsPage from './pages/admin/AdminReportsPage';
+// Main Landing / Listing Page
+import PropertyListPage from './pages/PropertyListPage';
 
-// Owner Sanctuary Host Layout & Subpages
-import OwnerLayout from './pages/owner/OwnerLayout';
-import OwnerOverviewPage from './pages/owner/OwnerOverviewPage';
-import OwnerPropertiesPage from './pages/owner/OwnerPropertiesPage';
-import OwnerBookingsPage from './pages/owner/OwnerBookingsPage';
+// Lazy-loaded Routed Pages
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const RegisterPage = lazy(() => import('./pages/RegisterPage'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const PropertyDetailPage = lazy(() => import('./pages/PropertyDetailPage'));
+const CreateEditPropertyPage = lazy(() => import('./pages/CreateEditPropertyPage'));
+const CustomerBookingsPage = lazy(() => import('./pages/CustomerBookingsPage'));
+const ChatPage = lazy(() => import('./pages/ChatPage'));
+const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
+const VerifyEmailPage = lazy(() => import('./pages/VerifyEmailPage'));
+
+// Admin Enterprise Layout & Subpages (Lazy)
+const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'));
+const AdminOverviewPage = lazy(() => import('./pages/admin/AdminOverviewPage'));
+const AdminUsersPage = lazy(() => import('./pages/admin/AdminUsersPage'));
+const AdminPropertiesPage = lazy(() => import('./pages/admin/AdminPropertiesPage'));
+const AdminBookingsPage = lazy(() => import('./pages/admin/AdminBookingsPage'));
+const AdminReportsPage = lazy(() => import('./pages/admin/AdminReportsPage'));
+
+// Owner Sanctuary Host Layout & Subpages (Lazy)
+const OwnerLayout = lazy(() => import('./pages/owner/OwnerLayout'));
+const OwnerOverviewPage = lazy(() => import('./pages/owner/OwnerOverviewPage'));
+const OwnerPropertiesPage = lazy(() => import('./pages/owner/OwnerPropertiesPage'));
+const OwnerBookingsPage = lazy(() => import('./pages/owner/OwnerBookingsPage'));
 
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -95,104 +99,106 @@ function AppContent() {
       <NotificationToast />
 
       <main className="flex-1">
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<Navigate to="/properties" replace />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
-          <Route path="/properties" element={<PropertyListPage />} />
-          <Route path="/properties/:id" element={<PropertyDetailPage />} />
+        <Suspense fallback={<LoadingSpinner fullScreen label="Loading..." />}>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<Navigate to="/properties" replace />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
+            <Route path="/properties" element={<PropertyListPage />} />
+            <Route path="/properties/:id" element={<PropertyDetailPage />} />
 
-          {/* User / Guest Protected Routes */}
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <ProfilePage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/my-bookings"
-            element={
-              <ProtectedRoute allowedRoles={['customer', 'admin']}>
-                <CustomerBookingsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/chat"
-            element={
-              <ProtectedRoute>
-                <ChatPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/notifications"
-            element={
-              <ProtectedRoute>
-                <NotificationsPage />
-              </ProtectedRoute>
-            }
-          />
+            {/* User / Guest Protected Routes */}
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/my-bookings"
+              element={
+                <ProtectedRoute allowedRoles={['customer', 'admin']}>
+                  <CustomerBookingsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/chat"
+              element={
+                <ProtectedRoute>
+                  <ChatPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/notifications"
+              element={
+                <ProtectedRoute>
+                  <NotificationsPage />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Owner / Host Protected Nested Routes */}
-          <Route
-            path="/owner-dashboard"
-            element={
-              <ProtectedRoute allowedRoles={['owner', 'admin']}>
-                <OwnerLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<OwnerOverviewPage />} />
-            <Route path="overview" element={<OwnerOverviewPage />} />
-            <Route path="properties" element={<OwnerPropertiesPage />} />
-            <Route path="bookings" element={<OwnerBookingsPage />} />
-          </Route>
-          
-          <Route
-            path="/create-property"
-            element={
-              <ProtectedRoute allowedRoles={['owner', 'admin']}>
-                <CreateEditPropertyPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/properties/:id/edit"
-            element={
-              <ProtectedRoute allowedRoles={['owner', 'admin']}>
-                <CreateEditPropertyPage />
-              </ProtectedRoute>
-            }
-          />
+            {/* Owner / Host Protected Nested Routes */}
+            <Route
+              path="/owner-dashboard"
+              element={
+                <ProtectedRoute allowedRoles={['owner', 'admin']}>
+                  <OwnerLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<OwnerOverviewPage />} />
+              <Route path="overview" element={<OwnerOverviewPage />} />
+              <Route path="properties" element={<OwnerPropertiesPage />} />
+              <Route path="bookings" element={<OwnerBookingsPage />} />
+            </Route>
+            
+            <Route
+              path="/create-property"
+              element={
+                <ProtectedRoute allowedRoles={['owner', 'admin']}>
+                  <CreateEditPropertyPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/properties/:id/edit"
+              element={
+                <ProtectedRoute allowedRoles={['owner', 'admin']}>
+                  <CreateEditPropertyPage />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Admin Protected Nested Routes */}
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute allowedRoles={['admin']}>
-                <AdminLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<AdminOverviewPage />} />
-            <Route path="overview" element={<AdminOverviewPage />} />
-            <Route path="users" element={<AdminUsersPage />} />
-            <Route path="properties" element={<AdminPropertiesPage />} />
-            <Route path="bookings" element={<AdminBookingsPage />} />
-            <Route path="reports" element={<AdminReportsPage />} />
-          </Route>
+            {/* Admin Protected Nested Routes */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<AdminOverviewPage />} />
+              <Route path="overview" element={<AdminOverviewPage />} />
+              <Route path="users" element={<AdminUsersPage />} />
+              <Route path="properties" element={<AdminPropertiesPage />} />
+              <Route path="bookings" element={<AdminBookingsPage />} />
+              <Route path="reports" element={<AdminReportsPage />} />
+            </Route>
 
-          {/* Backwards compatibility aliases */}
-          <Route path="/admin-dashboard" element={<Navigate to="/admin" replace />} />
-          <Route path="/admin-dashboard/*" element={<Navigate to="/admin" replace />} />
+            {/* Backwards compatibility aliases */}
+            <Route path="/admin-dashboard" element={<Navigate to="/admin" replace />} />
+            <Route path="/admin-dashboard/*" element={<Navigate to="/admin" replace />} />
 
-          <Route path="*" element={<Navigate to="/properties" replace />} />
-        </Routes>
+            <Route path="*" element={<Navigate to="/properties" replace />} />
+          </Routes>
+        </Suspense>
       </main>
 
       <Footer />

@@ -4,8 +4,18 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import PasswordStrengthIndicator, { checkPasswordRules } from '../components/common/PasswordStrengthIndicator';
 import ErrorBanner from '../components/common/ErrorBanner';
-import { Mail, Lock, User, Phone, Sparkles, UserPlus, Home, UserCheck, Send, RefreshCw } from 'lucide-react';
+import { Mail, Lock, User, Phone, Sparkles, UserPlus, Home, UserCheck, Send, RefreshCw, ArrowRight } from 'lucide-react';
 import API from '../api/axios';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from '../components/ui/card';
 
 // ─── Verification Sent Screen ─────────────────────────────────────────────────
 
@@ -31,68 +41,71 @@ const VerificationSentScreen = ({ email, role }) => {
   };
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md space-y-6 text-center">
+    <div className="min-h-[85vh] flex items-center justify-center px-4 py-12 relative">
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
+
+      <div className="w-full max-w-md space-y-6 text-center relative z-10">
         {/* Animated Email Icon */}
         <div className="flex justify-center">
-          <div className="w-24 h-24 rounded-full bg-indigo-500/10 border-2 border-indigo-500/30 flex items-center justify-center animate-pulse">
-            <Mail className="w-12 h-12 text-indigo-400" />
+          <div className="w-20 h-20 rounded-3xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center animate-pulse shadow-lg shadow-amber-500/10">
+            <Mail className="w-10 h-10 text-amber-400" />
           </div>
         </div>
 
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
-            <Sparkles className="w-3.5 h-3.5" /> Account Created!
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold">
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Account Created!
           </div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">Check Your Email</h1>
-          <p className="text-sm text-slate-400 max-w-xs mx-auto leading-relaxed">
+          <h1 className="text-2xl sm:text-3xl font-bold text-stone-100 tracking-tight font-serif">Check Your Email</h1>
+          <p className="text-xs sm:text-sm text-stone-400 max-w-xs mx-auto leading-relaxed">
             We sent a verification link to:
           </p>
-          <p className="text-indigo-300 font-semibold text-base break-all">{email}</p>
+          <p className="text-amber-300 font-semibold text-sm break-all">{email}</p>
         </div>
 
-        <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4 text-left">
-          <h3 className="text-sm font-semibold text-white">Next steps:</h3>
-          <ol className="space-y-2 text-sm text-slate-400 list-none">
+        <Card className="border-stone-800/80 bg-stone-900/70 backdrop-blur-xl p-6 text-left space-y-4">
+          <h3 className="text-xs font-bold text-stone-200 uppercase tracking-wider">Next steps:</h3>
+          <ol className="space-y-2.5 text-xs text-stone-300 list-none">
             {[
               'Open your email inbox',
-              'Click "Verify My Email" in the Haven Hideaway email',
+              'Click "Verify My Email" in the HavenHideaway email',
               'You\'ll be redirected to log in',
             ].map((step, i) => (
               <li key={i} className="flex items-start gap-3">
-                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 text-xs flex items-center justify-center font-bold mt-0.5">
+                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs flex items-center justify-center font-bold mt-0.5">
                   {i + 1}
                 </span>
-                {step}
+                <span className="text-stone-300">{step}</span>
               </li>
             ))}
           </ol>
-          <p className="text-xs text-slate-500">
+          <p className="text-[11px] text-stone-400 pt-2 border-t border-stone-800">
             The link expires in <span className="text-amber-400 font-medium">24 hours</span>. Check your spam folder if you don't see it.
           </p>
-        </div>
+        </Card>
 
         {/* Resend Button */}
-        <button
+        <Button
+          variant="outline"
           onClick={handleResend}
           disabled={resending || resendCooldown}
-          className="w-full py-3 rounded-xl border border-slate-700 text-slate-300 hover:border-indigo-500 hover:text-white transition text-sm font-medium flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+          className="w-full h-11 border-stone-800 text-stone-200 hover:text-amber-300 hover:border-amber-500/40"
         >
           {resending ? (
-            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            <div className="w-4 h-4 border-2 border-stone-400/30 border-t-stone-200 rounded-full animate-spin" />
           ) : (
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className="w-4 h-4 text-amber-400" />
           )}
           {resendCooldown ? 'Resend link sent — check your inbox' : resending ? 'Sending...' : 'Resend Verification Email'}
-        </button>
+        </Button>
 
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-stone-400">
           Wrong email?{' '}
-          <Link to="/register" className="text-indigo-400 hover:underline font-medium">
+          <Link to="/register" className="text-amber-400 hover:underline font-medium">
             Register again
           </Link>
           {' · '}
-          <Link to="/login" className="text-indigo-400 hover:underline font-medium">
+          <Link to="/login" className="text-amber-400 hover:underline font-medium">
             Go to Login
           </Link>
         </p>
@@ -180,7 +193,6 @@ const RegisterPage = () => {
         toast.success('Account created! Please check your email to verify.');
       }
     } catch (err) {
-      // err.response?.data comes through because AuthContext re-throws the raw axios error
       const errorMsg = err.response?.data?.message || err.message || 'Registration failed.';
       setFormError(errorMsg);
       toast.error(errorMsg);
@@ -195,197 +207,197 @@ const RegisterPage = () => {
   }
 
   return (
-    <div className="min-h-[85vh] flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-lg space-y-6">
+    <div className="min-h-[85vh] flex items-center justify-center px-4 py-12 relative">
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
 
+      <div className="w-full max-w-lg space-y-6 relative z-10">
         {/* Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold">
-            <Sparkles className="w-3.5 h-3.5" /> Join HavenHideaway
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold">
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Join HavenHideaway
           </div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">Create Your Account</h1>
-          <p className="text-sm text-slate-400">Join our sanctuary community as a guest or property owner</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-stone-100 tracking-tight font-serif">
+            Create Your Account
+          </h1>
+          <p className="text-xs sm:text-sm text-stone-400">Join our sanctuary community as a guest or property host</p>
         </div>
 
         {/* Form Container */}
-        <div className="glass-panel p-8 rounded-3xl border border-slate-800 shadow-2xl space-y-6">
-          <ErrorBanner message={formError} />
+        <Card className="border-stone-800/80 bg-stone-900/70 backdrop-blur-xl shadow-2xl rounded-3xl overflow-hidden">
+          <CardContent className="p-6 sm:p-8 space-y-6">
+            <ErrorBanner message={formError} />
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-
-            {/* Role Selection */}
-            <div>
-              <label className="block text-xs font-medium text-slate-300 uppercase tracking-wider mb-2">
-                I want to join as:
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, role: 'customer' })}
-                  className={`p-3.5 rounded-2xl border flex flex-col items-center gap-2 transition cursor-pointer ${
-                    formData.role === 'customer'
-                      ? 'bg-indigo-600/20 border-indigo-500 text-white shadow-lg shadow-indigo-500/20'
-                      : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-700'
-                  }`}
-                >
-                  <UserCheck className="w-6 h-6 text-indigo-400" />
-                  <div className="text-center">
-                    <p className="text-sm font-semibold">Retreat Guest</p>
-                    <p className="text-[10px] text-slate-400">Book & explore properties</p>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, role: 'owner' })}
-                  className={`p-3.5 rounded-2xl border flex flex-col items-center gap-2 transition cursor-pointer ${
-                    formData.role === 'owner'
-                      ? 'bg-emerald-600/20 border-emerald-500 text-white shadow-lg shadow-emerald-500/20'
-                      : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-700'
-                  }`}
-                >
-                  <Home className="w-6 h-6 text-emerald-400" />
-                  <div className="text-center">
-                    <p className="text-sm font-semibold">Property Host</p>
-                    <p className="text-[10px] text-slate-400">List & manage retreats</p>
-                  </div>
-                </button>
-              </div>
-            </div>
-
-            {/* Name */}
-            <div>
-              <label className="block text-xs font-medium text-slate-300 uppercase tracking-wider mb-1.5">
-                Full Name *
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
-                  <User className="w-5 h-5" />
-                </div>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  placeholder="Jane Doe"
-                  className="w-full pl-11 pr-4 py-3 rounded-xl glass-input text-sm"
-                  required
-                />
-              </div>
-            </div>
-
-            {/* Email */}
-            <div>
-              <label className="block text-xs font-medium text-slate-300 uppercase tracking-wider mb-1.5">
-                Email Address *
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
-                  <Mail className="w-5 h-5" />
-                </div>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="jane@gmail.com"
-                  className="w-full pl-11 pr-4 py-3 rounded-xl glass-input text-sm"
-                  required
-                />
-              </div>
-            </div>
-
-            {/* Passwords */}
-            <div className="space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 uppercase tracking-wider mb-1.5">
-                    Password *
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
-                      <Lock className="w-5 h-5" />
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Role Selection */}
+              <div>
+                <label className="block text-xs font-semibold text-stone-300 uppercase tracking-wider mb-2">
+                  I want to join as:
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, role: 'customer' })}
+                    className={`p-3.5 rounded-2xl border flex flex-col items-center gap-2 transition cursor-pointer ${
+                      formData.role === 'customer'
+                        ? 'bg-amber-500/15 border-amber-500 text-stone-100 shadow-md shadow-amber-500/10'
+                        : 'bg-stone-950/60 border-stone-800 text-stone-400 hover:border-stone-700'
+                    }`}
+                  >
+                    <UserCheck className="w-5 h-5 text-amber-400" />
+                    <div className="text-center">
+                      <p className="text-xs font-bold text-stone-100">Retreat Guest</p>
+                      <p className="text-[10px] text-stone-400">Book & explore retreats</p>
                     </div>
-                    <input
-                      type="password"
-                      name="password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      placeholder="••••••••"
-                      className="w-full pl-11 pr-4 py-3 rounded-xl glass-input text-sm"
-                      required
-                    />
-                  </div>
-                </div>
+                  </button>
 
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 uppercase tracking-wider mb-1.5">
-                    Confirm Password *
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
-                      <Lock className="w-5 h-5" />
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, role: 'owner' })}
+                    className={`p-3.5 rounded-2xl border flex flex-col items-center gap-2 transition cursor-pointer ${
+                      formData.role === 'owner'
+                        ? 'bg-amber-500/15 border-amber-500 text-stone-100 shadow-md shadow-amber-500/10'
+                        : 'bg-stone-950/60 border-stone-800 text-stone-400 hover:border-stone-700'
+                    }`}
+                  >
+                    <Home className="w-5 h-5 text-amber-400" />
+                    <div className="text-center">
+                      <p className="text-xs font-bold text-stone-100">Sanctuary Host</p>
+                      <p className="text-[10px] text-stone-400">List & host retreats</p>
                     </div>
-                    <input
-                      type="password"
-                      name="confirmPassword"
-                      value={formData.confirmPassword}
-                      onChange={handleChange}
-                      placeholder="••••••••"
-                      className="w-full pl-11 pr-4 py-3 rounded-xl glass-input text-sm"
-                      required
-                    />
+                  </button>
+                </div>
+              </div>
+
+              {/* Name */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-stone-300 uppercase tracking-wider">
+                  Full Name *
+                </label>
+                <div className="relative">
+                  <User className="w-4 h-4 text-stone-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <Input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    placeholder="Jane Doe"
+                    className="pl-10 h-11 bg-stone-950/80 border-stone-800 text-stone-100 placeholder:text-stone-600 focus-visible:ring-amber-500/40 focus-visible:border-amber-500/50"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Email */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-stone-300 uppercase tracking-wider">
+                  Email Address *
+                </label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-stone-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <Input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    placeholder="jane@example.com"
+                    className="pl-10 h-11 bg-stone-950/80 border-stone-800 text-stone-100 placeholder:text-stone-600 focus-visible:ring-amber-500/40 focus-visible:border-amber-500/50"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Passwords */}
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-semibold text-stone-300 uppercase tracking-wider">
+                      Password *
+                    </label>
+                    <div className="relative">
+                      <Lock className="w-4 h-4 text-stone-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <Input
+                        type="password"
+                        name="password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        placeholder="••••••••"
+                        className="pl-10 h-11 bg-stone-950/80 border-stone-800 text-stone-100 placeholder:text-stone-600 focus-visible:ring-amber-500/40 focus-visible:border-amber-500/50"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-semibold text-stone-300 uppercase tracking-wider">
+                      Confirm Password *
+                    </label>
+                    <div className="relative">
+                      <Lock className="w-4 h-4 text-stone-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <Input
+                        type="password"
+                        name="confirmPassword"
+                        value={formData.confirmPassword}
+                        onChange={handleChange}
+                        placeholder="••••••••"
+                        className="pl-10 h-11 bg-stone-950/80 border-stone-800 text-stone-100 placeholder:text-stone-600 focus-visible:ring-amber-500/40 focus-visible:border-amber-500/50"
+                        required
+                      />
+                    </div>
                   </div>
                 </div>
+
+                {/* Password Strength Visual Checklist */}
+                <PasswordStrengthIndicator password={formData.password} />
               </div>
 
-              {/* Password Strength Visual Checklist */}
-              <PasswordStrengthIndicator password={formData.password} />
-            </div>
-
-            {/* Phone */}
-            <div>
-              <label className="block text-xs font-medium text-slate-300 uppercase tracking-wider mb-1.5">
-                Phone Number (Optional)
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
-                  <Phone className="w-5 h-5" />
+              {/* Phone */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-stone-300 uppercase tracking-wider">
+                  Phone Number (Optional)
+                </label>
+                <div className="relative">
+                  <Phone className="w-4 h-4 text-stone-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <Input
+                    type="text"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    placeholder="+1 (555) 000-0000"
+                    className="pl-10 h-11 bg-stone-950/80 border-stone-800 text-stone-100 placeholder:text-stone-600 focus-visible:ring-amber-500/40 focus-visible:border-amber-500/50"
+                  />
                 </div>
-                <input
-                  type="text"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  placeholder="+1 (555) 000-0000"
-                  className="w-full pl-11 pr-4 py-3 rounded-xl glass-input text-sm"
-                />
               </div>
-            </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3.5 rounded-xl gradient-button text-white font-semibold text-sm shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 mt-2"
-            >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-              ) : (
-                <>
-                  <UserPlus className="w-4 h-4" /> Create Account
-                </>
-              )}
-            </button>
-          </form>
-        </div>
+              <Button
+                type="submit"
+                variant="brand"
+                size="lg"
+                disabled={loading}
+                className="w-full h-11 mt-2 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-stone-950 font-bold shadow-lg shadow-amber-600/20 cursor-pointer"
+              >
+                {loading ? (
+                  <div className="w-4 h-4 border-2 border-stone-950/30 border-t-stone-950 rounded-full animate-spin"></div>
+                ) : (
+                  <>
+                    <UserPlus className="w-4 h-4" /> Create Account
+                  </>
+                )}
+              </Button>
+            </form>
+          </CardContent>
 
-        <p className="text-center text-xs text-slate-400">
-          Already have an account?{' '}
-          <Link to="/login" className="text-indigo-400 font-semibold hover:underline">
-            Sign in instead
-          </Link>
-        </p>
-
+          <CardFooter className="p-6 sm:p-8 pt-0 sm:pt-0 border-t border-stone-800/60 bg-stone-950/30 flex justify-center py-4">
+            <p className="text-xs text-stone-400 text-center">
+              Already have an account?{' '}
+              <Link
+                to="/login"
+                className="text-amber-400 font-semibold hover:text-amber-300 hover:underline inline-flex items-center gap-1 ml-1"
+              >
+                Sign in instead <ArrowRight className="w-3 h-3" />
+              </Link>
+            </p>
+          </CardFooter>
+        </Card>
       </div>
     </div>
   );

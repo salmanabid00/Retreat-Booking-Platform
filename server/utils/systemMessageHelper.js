@@ -59,6 +59,11 @@ const createSystemMessageAndNotification = async ({
         notificationRecipient = ownerId;
         notifType = 'booking_cancelled';
         break;
+      case 'booking_paid':
+        systemText = `System Notice: Payment of $${booking.totalPrice} received successfully via Stripe. Booking is now PAID and confirmed!`;
+        notificationRecipient = ownerId;
+        notifType = 'booking_paid';
+        break;
       default:
         systemText = `System Notice: Booking status updated to ${type}.`;
         notificationRecipient = customerId;

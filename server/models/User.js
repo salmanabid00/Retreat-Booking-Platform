@@ -90,4 +90,7 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
+userSchema.index({ role: 1, isBlocked: 1 });
+userSchema.index({ createdAt: -1 });
+
 module.exports = mongoose.model('User', userSchema);

@@ -7,35 +7,45 @@ const Booking = require('../models/Booking');
 // @access  Private (Admin)
 const getAdminStats = async (req, res, next) => {
   try {
-    const totalUsers = await User.countDocuments();
-    const customersCount = await User.countDocuments({ role: 'customer' });
-    const ownersCount = await User.countDocuments({ role: 'owner' });
-
-    const totalProperties = await Property.countDocuments();
-    const approvedProperties = await Property.countDocuments({ isApproved: true });
-    const totalBookings = await Booking.countDocuments();
-    const confirmedBookings = await Booking.countDocuments({ status: 'confirmed' });
-    const pendingBookings = await Booking.countDocuments({ status: 'pending' });
-
-    const revenueResult = await Booking.aggregate([
-      { $match: { status: 'confirmed' } },
-      { $group: { _id: null, totalRevenue: { $sum: '$totalPrice' } } },
+    const [
+      totalUsers,
+      customersCount,
+      ownersCount,
+      totalProperties,
+      approvedProperties,
+      totalBookings,
+      confirmedBookings,
+      pendingBookings,
+      revenueResult,
+      recentBookings,
+      recentUsers,
+    ] = await Promise.all([
+      User.countDocuments(),
+      User.countDocuments({ role: 'customer' }),
+      User.countDocuments({ role: 'owner' }),
+      Property.countDocuments(),
+      Property.countDocuments({ isApproved: true }),
+      Booking.countDocuments(),
+      Booking.countDocuments({ status: 'confirmed' }),
+      Booking.countDocuments({ status: 'pending' }),
+      Booking.aggregate([
+        { $match: { status: 'confirmed' } },
+        { $group: { _id: null, totalRevenue: { $sum: '$totalPrice' } } },
+      ]),
+      Booking.find()
+        .populate('customer', 'name email avatar')
+        .populate('property', 'title pricePerNight location images')
+        .sort({ createdAt: -1 })
+        .limit(6)
+        .lean(),
+      User.find()
+        .select('-password')
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .lean(),
     ]);
 
     const totalRevenue = revenueResult[0] ? revenueResult[0].totalRevenue : 0;
-
-    // Fetch recent bookings for overview activity feed
-    const recentBookings = await Booking.find()
-      .populate('customer', 'name email avatar')
-      .populate('property', 'title pricePerNight location images')
-      .sort({ createdAt: -1 })
-      .limit(6);
-
-    // Fetch recent users
-    const recentUsers = await User.find()
-      .select('-password')
-      .sort({ createdAt: -1 })
-      .limit(5);
 
     res.json({
       success: true,
@@ -63,7 +73,7 @@ const getAdminStats = async (req, res, next) => {
 // @access  Private (Admin)
 const getUsers = async (req, res, next) => {
   try {
-    const users = await User.find().select('-password').sort({ createdAt: -1 });
+    const users = await User.find().select('-password').sort({ createdAt: -1 }).lean();
 
     res.json({
       success: true,
@@ -81,7 +91,8 @@ const getAllPropertiesAdmin = async (req, res, next) => {
   try {
     const properties = await Property.find()
       .populate('owner', 'name email avatar')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     res.json({
       success: true,
@@ -108,7 +119,8 @@ const getAllBookingsAdmin = async (req, res, next) => {
           select: 'name email avatar',
         },
       })
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     res.json({
       success: true,
@@ -125,15 +137,14 @@ const getAllBookingsAdmin = async (req, res, next) => {
 // @access  Private (Admin)
 const getAdminReports = async (req, res, next) => {
   try {
-    // Breakdown by property type
-    const propertyTypeBreakdown = await Property.aggregate([
-      { $group: { _id: '$propertyType', count: { $sum: 1 }, avgPrice: { $avg: '$pricePerNight' } } },
-      { $sort: { count: -1 } },
-    ]);
-
-    // Breakdown by booking status
-    const bookingStatusBreakdown = await Booking.aggregate([
-      { $group: { _id: '$status', count: { $sum: 1 }, totalRevenue: { $sum: '$totalPrice' } } },
+    const [propertyTypeBreakdown, bookingStatusBreakdown] = await Promise.all([
+      Property.aggregate([
+        { $group: { _id: '$propertyType', count: { $sum: 1 }, avgPrice: { $avg: '$pricePerNight' } } },
+        { $sort: { count: -1 } },
+      ]),
+      Booking.aggregate([
+        { $group: { _id: '$status', count: { $sum: 1 }, totalRevenue: { $sum: '$totalPrice' } } },
+      ]),
     ]);
 
     res.json({

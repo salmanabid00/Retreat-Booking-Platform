@@ -150,7 +150,8 @@ const getMyBookings = async (req, res, next) => {
         select: 'title location propertyType images pricePerNight owner address',
         populate: { path: 'owner', select: 'name email avatar phone' },
       })
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     res.json({
       success: true,
@@ -166,13 +167,14 @@ const getMyBookings = async (req, res, next) => {
 // @access  Private (Owner)
 const getOwnerBookings = async (req, res, next) => {
   try {
-    const ownerProperties = await Property.find({ owner: req.user._id }).select('_id');
+    const ownerProperties = await Property.find({ owner: req.user._id }).select('_id').lean();
     const propertyIds = ownerProperties.map((p) => p._id);
 
     const bookings = await Booking.find({ property: { $in: propertyIds } })
       .populate('property', 'title location propertyType images pricePerNight address owner')
       .populate('customer', 'name email avatar phone bio')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     res.json({
       success: true,
@@ -194,14 +196,15 @@ const getBookingById = async (req, res, next) => {
         select: 'title location propertyType images pricePerNight owner address',
         populate: { path: 'owner', select: 'name email avatar phone' },
       })
-      .populate('customer', 'name email avatar phone');
+      .populate('customer', 'name email avatar phone')
+      .lean();
 
     if (!booking) {
       return res.status(404).json({ success: false, message: 'Booking not found.' });
     }
 
-    const isCustomerOwner = booking.customer._id.toString() === req.user._id.toString();
-    const isPropertyOwner = booking.property.owner._id.toString() === req.user._id.toString();
+    const isCustomerOwner = booking.customer?._id?.toString() === req.user._id.toString();
+    const isPropertyOwner = booking.property?.owner?._id?.toString() === req.user._id.toString();
     const isAdmin = req.user.role === 'admin';
 
     if (!isCustomerOwner && !isPropertyOwner && !isAdmin) {
@@ -305,10 +308,104 @@ const updateBookingStatus = async (req, res, next) => {
   }
 };
 
+// @desc    Create a Stripe Checkout Session for a confirmed booking
+// @route   POST /api/bookings/:id/create-checkout-session
+// @access  Private (Customer / Admin)
+const createCheckoutSession = async (req, res, next) => {
+  try {
+    const stripeSecret = process.env.STRIPE_SECRET_KEY;
+    if (!stripeSecret) {
+      return res.status(500).json({
+        success: false,
+        message: 'Stripe payments are not configured on the server. Please set STRIPE_SECRET_KEY in server/.env.',
+      });
+    }
+
+    const stripe = require('stripe')(stripeSecret);
+    const { id } = req.params;
+
+    const booking = await Booking.findById(id).populate('property', 'title images location');
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found.' });
+    }
+
+    // Verify requesting user is the customer or admin
+    if (booking.customer.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Unauthorized: You can only create payment sessions for your own bookings.',
+      });
+    }
+
+    // Verify booking is confirmed
+    if (booking.status !== 'confirmed') {
+      return res.status(400).json({
+        success: false,
+        message: `Payment cannot be initiated. Booking must be 'confirmed' by the host first (current status: '${booking.status}').`,
+      });
+    }
+
+    // Verify booking is unpaid
+    if (booking.paymentStatus === 'paid') {
+      return res.status(400).json({
+        success: false,
+        message: 'This booking has already been paid for.',
+      });
+    }
+
+    const clientOrigin = process.env.CLIENT_URL
+      ? process.env.CLIENT_URL.split(',')[0].trim()
+      : 'http://localhost:5173';
+
+    const unitAmount = Math.round(booking.totalPrice * 100); // Price in cents
+    const propertyTitle = booking.property?.title || 'Retreat Booking';
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      mode: 'payment',
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: propertyTitle,
+              description: `${booking.nights} night(s) stay (${new Date(booking.checkInDate).toLocaleDateString()} - ${new Date(booking.checkOutDate).toLocaleDateString()})`,
+              images: booking.property?.images?.[0]?.url ? [booking.property.images[0].url] : [],
+            },
+            unit_amount: unitAmount,
+          },
+          quantity: 1,
+        },
+      ],
+      customer_email: req.user.email,
+      client_reference_id: booking._id.toString(),
+      metadata: {
+        bookingId: booking._id.toString(),
+        customerId: req.user._id.toString(),
+      },
+      success_url: `${clientOrigin}/my-bookings?payment=success&bookingId=${booking._id}`,
+      cancel_url: `${clientOrigin}/my-bookings?payment=cancelled&bookingId=${booking._id}`,
+    });
+
+    booking.stripeCheckoutSessionId = session.id;
+    await booking.save();
+
+    res.json({
+      success: true,
+      url: session.url,
+      sessionId: session.id,
+    });
+  } catch (error) {
+    console.error('[Create Checkout Session Error]:', error);
+    next(error);
+  }
+};
+
 module.exports = {
   createBooking,
   getMyBookings,
   getOwnerBookings,
   getBookingById,
   updateBookingStatus,
+  createCheckoutSession,
 };
